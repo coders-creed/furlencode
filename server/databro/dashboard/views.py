@@ -18,8 +18,12 @@ def heatmap(request):
 	return render(request, 'dashboard/heatmap.html', context)
 
 def events(request):
-	context = {}
-	return render(request, 'dashboard/events.html', context)
+	if request.method == 'POST':
+		print request.POST
+		return render(request, 'dashboard/index.html')
+	else:
+		return render(request, 'dashboard/index.html')
+
 
 def logger(request):
 	return 
