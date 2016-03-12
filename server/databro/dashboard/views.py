@@ -1,5 +1,7 @@
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def index(request):
 	context = {}
@@ -19,12 +21,17 @@ def heatmap(request):
 
 def events(request):
 	if request.method == 'POST':
-		print request.POST
 		return render(request, 'dashboard/index.html')
 	else:
 		return render(request, 'dashboard/index.html')
 
-
+@csrf_exempt
 def logger(request):
+	if request.method == 'POST':
+		track_info = json.loads(request.body)
+		print track_info
+		return HttpResponse("")
+	else:
+		return render(request, 'dashboard/index.html')
 	return 
 

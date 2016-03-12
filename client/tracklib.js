@@ -2,7 +2,7 @@
 * @Author: Karthik
 * @Date:   2016-03-12 15:19:08
 * @Last Modified by:   Karthik
-* @Last Modified time: 2016-03-12 23:42:29
+* @Last Modified time: 2016-03-13 00:46:33
 */
 
 // FIELD_DESCS = window.FIELD_DESCS;
@@ -224,7 +224,7 @@ var field_getter = {"userAgent": window.navigator.userAgent,
 
 
 PAGE_FLAG = 0;
-TRACK_INFO = [];
+TRACK_INFO = {};
 'use strict';
 // compiles the tracking info to be sent to the analytics server
 function compile_stat_track_info (){
@@ -242,6 +242,7 @@ function set_stat_field (field) {
 	switch(field_type){
 		
 		case "session":
+            console.log(Cookies.get(field) == undefined);
 			if (Cookies.get(field) == undefined){
 				var field_val = field_getter[field];
 				Cookies.set(field, field_val);
@@ -279,22 +280,25 @@ function track_events (FIELD_DESCS) {
 };
 
 
-function send_track_info (TRACK_INFO) {
-	$.post("localhost:8001/logger", TRACK_INFO,
+function send_track_info () {
+	$.post("http://localhost:8001/dashboard/logger", JSON.stringify(TRACK_INFO),
 	function(){
 		return;
 	});
-	return;
+    return;
 }
 
 track_events();
 
 
 function main (FIELD_DESCS) {
+    console.log(TRACK_INFO);
 	compile_stat_track_info();
-	console.log(TRACK_INFO);
-	send_track_info(TRACK_INFO)
-	TRACK_INFO = [];
+	// console.log(TRACK_INFO);
+	send_track_info();
+    console.log(TRACK_INFO);
+
+	TRACK_INFO = {};
 	setTimeout(main, SEND_INT);
 }
 
