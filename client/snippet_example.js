@@ -2,7 +2,7 @@
 * @Author: Karthik
 * @Date:   2016-03-12 20:09:31
 * @Last Modified by:   Karthik
-* @Last Modified time: 2016-03-12 23:02:48
+* @Last Modified time: 2016-03-13 03:38:22
 */
 
 
@@ -15,8 +15,7 @@ FIELD_DESCS = {"userAgent":{"type":"session"},
 			   "browser":{"type":"session"},
 				"os" : {"type":"session"},
 				"mobile":{"type":"session"},
-				"screen": {"type":"session"},
-				"ip" : {"type":"session"},
+				"screen_res": {"type":"session"},
 				"referrer" : {"type":"page"},
 				"sessionStart": {"type":"session"},
 				"pageStart": {"type":"page"}

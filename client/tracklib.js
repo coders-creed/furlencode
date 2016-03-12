@@ -2,7 +2,7 @@
 * @Author: Karthik
 * @Date:   2016-03-12 15:19:08
 * @Last Modified by:   Karthik
-* @Last Modified time: 2016-03-13 00:46:33
+* @Last Modified time: 2016-03-13 03:44:07
 */
 
 // FIELD_DESCS = window.FIELD_DESCS;
@@ -215,8 +215,8 @@ var field_getter = {"userAgent": window.navigator.userAgent,
 					"browser" : jscd.browser,
 					"os" : jscd.os,
 				    "mobile":jscd.mobile,
-					"screen": jscd.screen,
-					"ip" : window.ip,
+					"screen_res": jscd.screen,
+					"ip_addr" : window.ip,
 					"referrer" : document.referrer,
 					"sessionStart": $.now(),
 					"pageStart": $.now()
@@ -224,7 +224,8 @@ var field_getter = {"userAgent": window.navigator.userAgent,
 
 
 PAGE_FLAG = 0;
-TRACK_INFO = {};
+TRACK_INFO = {"domain": {"type":"always", "val":window.location.hostname},
+              "page_url": {"type":"always", "val":document.URL}};
 'use strict';
 // compiles the tracking info to be sent to the analytics server
 function compile_stat_track_info (){
@@ -246,13 +247,13 @@ function set_stat_field (field) {
 			if (Cookies.get(field) == undefined){
 				var field_val = field_getter[field];
 				Cookies.set(field, field_val);
-				TRACK_INFO[field] = field_val;
+				TRACK_INFO[field] = {"type":field_type, "val":field_val};
 			};
 			break;
 
 		case "page":
 			if (!PAGE_FLAG){
-				TRACK_INFO[field] = field_getter[field];
+				TRACK_INFO[field] = {"type":field_type, "val":field_getter[field]};
 				PAGE_FLAG = 1;
 			};
 			break;
@@ -269,10 +270,10 @@ function track_events (FIELD_DESCS) {
 			var triggers = FIELD_DESCS[field]["events"];
 			$(target).on(triggers, function(e) {
 				if (typeof(TRACK_INFO[field]) == undefined){
-					TRACK_INFO[field] = [e];
+					TRACK_INFO[field] = {"type":field_type, "val":[e]};
 				}
 				else{
-					TRACK_INFO[field].push(e);
+					TRACK_INFO[field]["val"].push(e);
 				}
 			});
 		};
@@ -298,7 +299,8 @@ function main (FIELD_DESCS) {
 	send_track_info();
     console.log(TRACK_INFO);
 
-	TRACK_INFO = {};
+TRACK_INFO = {"domain": {"type":"always", "val":window.location.hostname},
+              "page_url": {"type":"always", "val":document.URL}};
 	setTimeout(main, SEND_INT);
 }
 
@@ -306,7 +308,7 @@ main(FIELD_DESCS);
 
 $(window).unload(function() {
 	compile_stat_track_info();
-	TRACK_INFO["pageTime"] = $.now() - field_getter["pageStart"];
+	TRACK_INFO["pageTime"] = {"type":"page", "val":$.now() - field_getter["pageStart"]};
 	send_track_info(TRACK_INFO);
 });
 
