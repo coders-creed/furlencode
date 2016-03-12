@@ -26,6 +26,13 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
+TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'dashboard/templates')]
+TEMPLATE_LOADERS=['django.template.loaders.filesystem.Loader']
+
+STATIC_URL = "/static/"
+STATICFILES_DIRS = [
+	os.path.join(BASE_DIR, "static")
+]
 
 # Application definition
 
@@ -36,6 +43,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'dashboard'
 )
 
 MIDDLEWARE_CLASSES = (
