@@ -2,8 +2,13 @@
 * @Author: Karthik
 * @Date:   2016-03-12 15:19:08
 * @Last Modified by:   Karthik
-* @Last Modified time: 2016-03-12 21:12:12
+* @Last Modified time: 2016-03-12 23:42:29
 */
+
+// FIELD_DESCS = window.FIELD_DESCS;
+// var SEND_INT = window.SEND_INT;
+
+console.log(FIELD_DESCS);
 
 
 (function get_agent_info(window) {
@@ -186,28 +191,43 @@
 
 
 function get_ip () {
-    $.getJSON("http://jsonip.com/?callback=?", function (data) {
-        return data.ip;
+	// ip;
+	// var promise = $.getJSON("http://jsonip.com/?callback=?");
+	// promise.success(function (data){
+	// 	ip = data.ip;
+	// });
+	$.ajax({
+	  url: "http://jsonip.com/?callback=?",
+	  dataType: 'json',
+	  async: false,
+	  success: function(data) {
+	  	console.log(data.ip)
+	  	window.ip = data.ip;
+	  }
 	});
+	return;
+
 }
+
+console.log(get_ip());
 
 var field_getter = {"userAgent": window.navigator.userAgent, 
 					"browser" : jscd.browser,
 					"os" : jscd.os,
 				    "mobile":jscd.mobile,
 					"screen": jscd.screen,
-					"ip" : get_ip(),
+					"ip" : window.ip,
 					"referrer" : document.referrer,
 					"sessionStart": $.now(),
 					"pageStart": $.now()
 };
 
 
-var PAGE_FLAG = 0;
-var TRACK_INFO = [];
+PAGE_FLAG = 0;
+TRACK_INFO = [];
 'use strict';
 // compiles the tracking info to be sent to the analytics server
-function compile_stat_track_info(FIELD_DESCS){
+function compile_stat_track_info (){
 	for (field in FIELD_DESCS) {
 		set_stat_field(field);
 	};
@@ -215,16 +235,16 @@ function compile_stat_track_info(FIELD_DESCS){
 }
 
 // sets fields based on information already sent/to be sent
-function set_field (field) {
+function set_stat_field (field) {
 	field_type = FIELD_DESCS[field]["type"];
 	
 	// set field value based on type (session/page/event)
 	switch(field_type){
 		
 		case "session":
-			if (typeof(Cookies.get(field) == undefined){
-				var field_val = field_getter[field]();
-				Cookies.set(field) = field_val;
+			if (Cookies.get(field) == undefined){
+				var field_val = field_getter[field];
+				Cookies.set(field, field_val);
 				TRACK_INFO[field] = field_val;
 			};
 			break;
@@ -246,33 +266,39 @@ function track_events (FIELD_DESCS) {
 		if (field_type == "event") {
 			var target = FIELD_DESCS[field]["sel"];
 			var triggers = FIELD_DESCS[field]["events"];
-			$(target).on(triggers, function(e)){
+			$(target).on(triggers, function(e) {
 				if (typeof(TRACK_INFO[field]) == undefined){
 					TRACK_INFO[field] = [e];
 				}
 				else{
 					TRACK_INFO[field].push(e);
 				}
-			}();
+			});
 		};
 	};
-}();
+};
+
 
 function send_track_info (TRACK_INFO) {
-	$(function(){
-		$.post("localhost:8000/logger", TRACK_INFO,
-		function(){
-			return;
-		});
-	})();
+	$.post("localhost:8001/logger", TRACK_INFO,
+	function(){
+		return;
+	});
+	return;
 }
+
+track_events();
+
 
 function main (FIELD_DESCS) {
 	compile_stat_track_info();
+	console.log(TRACK_INFO);
 	send_track_info(TRACK_INFO)
 	TRACK_INFO = [];
 	setTimeout(main, SEND_INT);
-}();
+}
+
+main(FIELD_DESCS);
 
 $(window).unload(function() {
 	compile_stat_track_info();
