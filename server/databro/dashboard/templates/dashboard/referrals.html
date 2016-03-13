@@ -1,0 +1,24 @@
+{% extends "dashboard/base.html" %}
+
+{% block content %}
+    <h1>Referrals</h1>
+    <div id="viz"></div>
+
+<div id="viz"></div>
+
+<script>
+  var datums = {{ referrers|safe }}
+  var data = []
+  for (var i = datums.length - 1; i >= 0; i--) {
+  	data.push({"value": datums[i][1], "name": datums[i][0]});
+  };
+  d3plus.viz()
+    .container("#viz")
+    .data(data)
+    .type("pie")
+    .id("name")
+    .size("value")
+    .draw()
+</script>
+
+{% endblock content %}

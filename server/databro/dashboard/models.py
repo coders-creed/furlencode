@@ -3,6 +3,8 @@ from django.contrib.auth.models import *
 
 from datetime import datetime
 
+import random
+
 class CompanyInfo(models.Model):
 	company = models.ForeignKey(User, on_delete=models.CASCADE)
 	domain_name = models.CharField(max_length=50, unique=True)
@@ -55,7 +57,7 @@ class Referrer(models.Model):
 
 	referrer_url =  models.URLField(max_length=200)
 	referrer_title =  models.CharField(max_length=100, blank=True)
-	referrer_count = models.IntegerField()
+	referrer_count = models.IntegerField(default=random.randrange(50, 250))
 
 class ClickInfo(models.Model):
 	click_config = models.ForeignKey(ClickConfig, 

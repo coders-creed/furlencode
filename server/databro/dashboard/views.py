@@ -2,6 +2,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from dashboard.models import *
+import json
 from model_helpers import get_loc_from_ip
 from ipware.ip import get_ip
 import json
@@ -14,16 +15,42 @@ def index(request):
 	context = {}
 	return render(request, 'dashboard/index.html', context)
 
-def overview(request):
-	context = {}
-	return render(request, 'dashboard/overview.html', context)
+def referrals(request):
+	referrers = Referrer.objects.filter(company=1)
+	referrers = json.dumps(list(referrers.values_list('referrer_title', 'referrer_count')))
+	print referrers
+	context = {"referrers": referrers}
+	return render(request, 'dashboard/referrals.html', context)
 
 def pageflow(request):
-	context = {}
+	user = request.user
+	pageflows = PageFlow.objects.filter(company=1)
+
+	outset = pageflows.values_list('from_url').distinct()
+	inset = pageflows.values_list('to_url').distinct()
+
+	outset = map(lambda x: x[0], outset)
+	inset = map(lambda x: x[0], inset)
+
+	nodes_list = list(set(outset) | set(inset))
+
+	nodes = [{"id" : str(node)} for node in nodes_list]
+
+	weights = [{"strength": pf.flow_count, 
+				"source": nodes_list.index(pf.from_url),
+				"target":  nodes_list.index(pf.to_url)} for pf in pageflows 
+				if nodes_list.index(pf.to_url) != nodes_list.index(pf.from_url)]
+
+
+	context = {"nodes": json.dumps(nodes), "weights": json.dumps(weights)}
+
 	return render(request, 'dashboard/pageflow.html', context)
 
 def heatmap(request):
-	context = {}
+
+	locations = json.dumps(list(UserInfo.objects.filter(company=1).values_list('latitude','longitude')))
+	context = {"geo_info": locations}
+	print context
 	return render(request, 'dashboard/heatmap.html', context)
 
 def events(request):
@@ -36,7 +63,6 @@ def events(request):
 def logger(request):
 	if request.method == 'POST':
 		track_info = json.loads(request.body)
-		print track_info
 		if any([track_info[r]["type"]== "session" for r in track_info]):
 			# update session models
 			company = get_company(track_info["domain"]["val"])
@@ -52,15 +78,6 @@ def logger(request):
 				+ ip_addr
 				+ screen_res).hexdigest()
 
-			print [user_hash,
-					os,
-					browser,
-					ip_addr,
-					latitude,
-					longitude,
-					screen_res,
-					mobile]
-
 			company.userinfo_set.create(
 					user_hash=user_hash,
 					os=os,
@@ -72,19 +89,25 @@ def logger(request):
 					mobile=mobile
 				)
 
-			return HttpResponse("")
 		if any([track_info[r]["type"] == "page" for r in track_info]):
-			if "referrer" in track_info.keys:
-				company = get_company(track_info["domain"]["val"])
+			company = get_company(track_info["domain"]["val"])
 
+			to_domain = get_val(track_info, "domain")
+			to_url = get_val(track_info, "page_url")
+			to_title = get_val(track_info, "page_title")
+			
+			if "referrer" in track_info.keys() and get_val(track_info, "referrer"):
 				referrer = get_val(track_info, "referrer")
-				from_domain = get_tld(referrer)
+				print "REFERRED"
 
-				to_domain = get_val(track_info, "domain")
-				to_url = get_val(track_info, "page_url")
-				to_title = get_val(track_info, "page_title")
+				if "localhost" in referrer:
+					from_domain = "localhost"
+				else:
+					from_domain = get_tld(referrer)
 
+				print from_domain, to_domain
 				if from_domain == to_domain:
+					print "PAGEFLOW"
 					try:
 						pageflow = PageFlow.objects.get(
 								company=company,
@@ -95,8 +118,9 @@ def logger(request):
 							)
 						# update pageflow if from domain = to domain
 						pageflow.flow_count += 1
+						print "PAGEFLOW UPDATED"
 						pageflow.save()
-					except  DoesNotExist:
+					except:
 						# create object
 						company.pageflow_set.create(
 							from_url=referrer,
@@ -105,8 +129,13 @@ def logger(request):
 							to_title = to_title,
 							flow_count = 1
 						)
+						print "PAGEFLOW CREATED"
+
 				# else update referrer
-				else:
+				
+				elif from_domain != to_domain:
+					print "REFERRER"
+
 					try:
 						referrer = Referrer.objects.get(
 								company=company,
@@ -115,37 +144,40 @@ def logger(request):
 							)
 						# update pageflow if from domain = to domain
 						referrer.referrer_count += 1
+						print "REFERRER UPDATED"
 						referrer.save()
-					except  DoesNotExist:
+					except:
 						# create object
 						company.referrer_set.create(
 							referrer_url=referrer,
 							referrer_title = from_domain,
 							referrer_count = 1
 						)
+						print "REFERRER CREATED"
 			# if pagetime in keys, update pagetime
-			# if "pageTime" in track_info.keys:
+			if "pageTime" in track_info.keys():
 				try:
+					print company, to_url, to_title
 					pagetime = PageTime.objects.get(
-							company=company,
-							page_url=to_url,
+							company = company,
+							page_url = to_url,
 							page_title = to_title
 						)
-					# update pageflow if from domain = to domain
+					# update pagetime and count if from domain = to domain
 					pagetime.page_time += get_val(track_info, "pageTime")
 					pagetime.visit_count += 1
 					pagetime.save()
-				except  DoesNotExist:
+				except Exception as e:
 					# create object
 					company.pagetime_set.create(
-						page_url=to_url,
+						page_url = to_url,
 						page_title = to_title,
 						page_time = get_val(track_info, "pageTime"),
 						visit_count = 1
 					)
 
-		else:
-			return HttpResponse("")
+
+	return HttpResponse("")
 
 
 def get_company(domain):

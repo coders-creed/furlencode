@@ -2,4 +2,30 @@
 
 {% block content %}
     <h1>Pageflow</h1>
+    <div id="viz"></div>
+{% autoescape off %}
+<script>
+  var nodes = {{ nodes|safe }};
+  var edges = {{ weights|safe }};
+
+  console.log(nodes);
+  console.log(edges);
+
+  var visualization = d3plus.viz()
+    .container("#viz")
+    .edges({
+      "strength": "strength",
+      "value": edges
+    })
+    .focus({
+      "tooltip": true,
+      "value": "gamma"
+    })
+    .id("id")
+    .nodes(nodes)
+    .size(100)
+    .type("sankey")
+    .draw();
+{% endautoescape %}
+</script>
 {% endblock content %}
