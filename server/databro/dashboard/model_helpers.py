@@ -2,11 +2,13 @@
 # @Author: Karthik
 # @Date:   2016-03-13 02:08:44
 # @Last Modified by:   Karthik
-# @Last Modified time: 2016-03-13 03:10:31
+# @Last Modified time: 2016-03-13 04:41:49
 
 from urllib2 import urlopen
 from contextlib import closing
 import json
+
+from tld import get_tld
 
 def get_loc_from_ip(ip_addr):
 	url = 'http://freegeoip.net/json/'

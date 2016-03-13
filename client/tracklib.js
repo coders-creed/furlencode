@@ -2,7 +2,7 @@
 * @Author: Karthik
 * @Date:   2016-03-12 15:19:08
 * @Last Modified by:   Karthik
-* @Last Modified time: 2016-03-13 03:44:07
+* @Last Modified time: 2016-03-13 05:29:26
 */
 
 // FIELD_DESCS = window.FIELD_DESCS;
@@ -224,8 +224,23 @@ var field_getter = {"userAgent": window.navigator.userAgent,
 
 
 PAGE_FLAG = 0;
-TRACK_INFO = {"domain": {"type":"always", "val":window.location.hostname},
-              "page_url": {"type":"always", "val":document.URL}};
+TRACK_INFO = {
+        "domain": 
+            {
+                "type":"always", 
+                "val":window.location.hostname
+            },
+        "page_url": 
+            {
+                "type":"always", 
+                "val":document.URL
+            },
+        "page_title": 
+            {
+                "type":"always", 
+                "val":$(document).find("title").text()
+            }
+          };
 'use strict';
 // compiles the tracking info to be sent to the analytics server
 function compile_stat_track_info (){
@@ -283,6 +298,7 @@ function track_events (FIELD_DESCS) {
 
 function send_track_info () {
 	$.post("http://localhost:8001/dashboard/logger", JSON.stringify(TRACK_INFO),
+
 	function(){
 		return;
 	});
@@ -299,16 +315,44 @@ function main (FIELD_DESCS) {
 	send_track_info();
     console.log(TRACK_INFO);
 
-TRACK_INFO = {"domain": {"type":"always", "val":window.location.hostname},
-              "page_url": {"type":"always", "val":document.URL}};
+TRACK_INFO = {
+        "domain": 
+            {
+                "type":"always", 
+                "val":window.location.hostname
+            },
+        "page_url": 
+            {
+                "type":"always", 
+                "val":document.URL
+            },
+        "page_title": 
+            {
+                "type":"always", 
+                "val":$(document).find("title").text()
+            }
+          };
 	setTimeout(main, SEND_INT);
 }
 
 main(FIELD_DESCS);
 
 $(window).unload(function() {
+    console.log("unloading page");
 	compile_stat_track_info();
-	TRACK_INFO["pageTime"] = {"type":"page", "val":$.now() - field_getter["pageStart"]};
-	send_track_info(TRACK_INFO);
+
+	TRACK_INFO["pageTime"] = {
+                                "type":"page", 
+                                "val":$.now() - field_getter["pageStart"]
+                             };
+    console.log(TRACK_INFO);
+	
+    $.ajax({
+      type: 'POST',
+      url: "http://localhost:8001/dashboard/logger",
+      data: JSON.stringify(TRACK_INFO),
+      success: function(){},
+      async:false
+    });
 });
 
